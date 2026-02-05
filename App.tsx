@@ -8,8 +8,9 @@ import { FractionModule } from './components/FractionModule';
 import { WordProblemModule } from './components/WordProblemModule';
 import { JuniorHighModule } from './components/JuniorHighModule';
 import { HighSchoolModule } from './components/HighSchoolModule';
+import { OlympiadModule } from './components/OlympiadModule';
 import { AITutor } from './components/AITutor';
-import { Calculator, Shapes, PieChart, Bot, Home, Star, BrainCircuit, Variable, Activity } from 'lucide-react';
+import { Calculator, Shapes, PieChart, Bot, Home, Star, BrainCircuit, Variable, Activity, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const topics: Topic[] = [
@@ -56,6 +57,13 @@ const topics: Topic[] = [
     icon: 'pie'
   },
   {
+    id: AppView.OLYMPIAD,
+    title: '奥数博物馆',
+    description: '探索经典的奥数难题，挑战逻辑思维巅峰！',
+    color: 'bg-gradient-to-br from-amber-700 to-yellow-900',
+    icon: 'trophy'
+  },
+  {
     id: AppView.AI_TUTOR,
     title: '问问数学小博士',
     description: '和我们的 AI 老师聊天，解决难题。',
@@ -73,6 +81,7 @@ const getIcon = (name: string) => {
         case 'brain': return <BrainCircuit className="w-full h-full" />;
         case 'variable': return <Variable className="w-full h-full" />;
         case 'activity': return <Activity className="w-full h-full" />;
+        case 'trophy': return <Trophy className="w-full h-full" />;
         default: return null;
     }
 }
@@ -171,6 +180,12 @@ export default function App() {
           {currentView === AppView.HIGH_SCHOOL_MATH && (
             <motion.div key="high_school_math" initial={{opacity: 0, x: 100}} animate={{opacity: 1, x: 0}} exit={{opacity: 0, x: -100}}>
               <HighSchoolModule />
+            </motion.div>
+          )}
+
+          {currentView === AppView.OLYMPIAD && (
+            <motion.div key="olympiad" initial={{opacity: 0, x: 100}} animate={{opacity: 1, x: 0}} exit={{opacity: 0, x: -100}}>
+              <OlympiadModule />
             </motion.div>
           )}
 

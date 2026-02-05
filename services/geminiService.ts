@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Chat, Type } from "@google/genai";
 
 const apiKey = process.env.API_KEY || '';
@@ -6,7 +7,7 @@ const ai = new GoogleGenAI({ apiKey });
 
 export const createMathTutorChat = (): Chat => {
   return ai.chats.create({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     config: {
       systemInstruction: `你叫"数学小博士" (Math Whiz)，是一个友善、充满活力且富有鼓励性的小学、初中及高中数学辅导老师（面向 6-18 岁的中国孩子）。
       - 请全程使用简体中文。
@@ -22,7 +23,7 @@ export const createMathTutorChat = (): Chat => {
 export const generateMathExplanation = async (topic: string): Promise<string> => {
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: `用两句话向一个学生解释数学概念 "${topic}"，最好使用一个比喻。请用中文回答。`,
     });
     return response.text || "我现在有点想不出来，不如我们先做练习吧！";
@@ -42,7 +43,7 @@ export interface WordProblem {
 export const generateWordProblem = async (grade: number): Promise<WordProblem | null> => {
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: `Generate a single math word problem for a Grade ${grade} student in China.
       
       Requirements by Grade:
