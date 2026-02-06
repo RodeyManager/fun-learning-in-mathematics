@@ -27,10 +27,9 @@ export const OlympiadModule: React.FC = () => {
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   
-  // Refs for drag constraints
+  // Refs for robust drag handling
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [dragConstraints, setDragConstraints] = useState({ left: 0, right: 0 });
 
   const categories = [
     { id: 'logic', name: '逻辑推理', icon: <Sword size={16} />, desc: '思维的迷宫' },
@@ -47,24 +46,6 @@ export const OlympiadModule: React.FC = () => {
     { name: '进阶馆', range: [7, 8, 9], icon: <Medal size={18} />, sub: '初中挑战', color: 'text-orange-600', bg: 'bg-orange-50' },
     { name: '巅峰馆', range: [10, 11, 12], icon: <Crown size={18} />, sub: '高中奥林匹克', color: 'text-rose-600', bg: 'bg-rose-50' },
   ];
-
-  // Calculate drag constraints based on content vs container width
-  const updateConstraints = () => {
-    if (containerRef.current && contentRef.current) {
-      const containerWidth = containerRef.current.offsetWidth;
-      const contentWidth = contentRef.current.scrollWidth;
-      setDragConstraints({
-        left: -(contentWidth - containerWidth + 32), // 32 is padding/safety margin
-        right: 0
-      });
-    }
-  };
-
-  useEffect(() => {
-    updateConstraints();
-    window.addEventListener('resize', updateConstraints);
-    return () => window.removeEventListener('resize', updateConstraints);
-  }, [categories]);
 
   // TTS Logic
   const stopSpeaking = () => {
@@ -179,7 +160,7 @@ export const OlympiadModule: React.FC = () => {
       <div className="bg-[#fdf6e3] rounded-[2.5rem] shadow-2xl overflow-hidden border-8 border-amber-900/10 min-h-[800px] flex flex-col relative">
         
         {/* Card Header */}
-        <div className="bg-gradient-to-r from-amber-800 via-amber-900 to-yellow-950 p-6 md:p-8 text-white relative overflow-hidden">
+        <div className="bg-gradient-to-r from-amber-800 via-amber-900 to-yellow-950 p-6 md:p-8 text-white relative overflow-hidden shrink-0">
           <div className="absolute top-0 right-0 opacity-10 rotate-12 translate-x-1/4 -translate-y-1/4">
              <Landmark size={200} />
           </div>
@@ -189,7 +170,7 @@ export const OlympiadModule: React.FC = () => {
                 <Trophy className="w-10 h-10 text-yellow-400" />
               </div>
               <div>
-                <h2 className="text-3xl md:text-4xl font-black font-serif tracking-tight">奥数博物馆</h2>
+                <h2 className="text-3xl md:text-4xl font-black font-serif tracking-tight text-white">奥数博物馆</h2>
                 <p className="text-amber-200/60 text-sm font-medium tracking-widest uppercase flex items-center gap-2">
                    <Sparkles size={14} /> 逻辑与智慧的殿堂
                 </p>
@@ -259,46 +240,47 @@ export const OlympiadModule: React.FC = () => {
           </aside>
 
           {/* Main Problem Area */}
-          <section className="flex-1 flex flex-col bg-[url('https://www.transparenttextures.com/patterns/parchment.png')] relative">
+          <section className="flex-1 flex flex-col bg-[url('https://www.transparenttextures.com/patterns/parchment.png')] relative overflow-hidden">
             
-            {/* Horizontal Category Picker - Draggable Interface */}
+            {/* Horizontal Category Picker - PC FIXED Drag */}
             <div 
               ref={containerRef}
-              className="relative border-b border-amber-900/10 bg-amber-50/30 sticky top-0 z-20 overflow-hidden select-none"
+              className="relative border-b border-amber-900/10 bg-amber-50/60 sticky top-0 z-20 overflow-hidden select-none shrink-0"
             >
               {/* Visual Decorative Masks */}
-              <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-amber-50/90 to-transparent z-10 pointer-events-none" />
-              <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-amber-50/90 to-transparent z-10 pointer-events-none" />
+              <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-amber-50 to-transparent z-10 pointer-events-none" />
+              <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-amber-50 to-transparent z-10 pointer-events-none" />
 
-              <div className="cursor-grab active:cursor-grabbing">
-                <motion.div 
-                  ref={contentRef}
-                  drag="x"
-                  dragConstraints={dragConstraints}
-                  dragElastic={0.2}
-                  dragMomentum={true}
-                  className="flex gap-2 p-3 px-12 whitespace-nowrap w-max"
-                >
-                  {categories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onPointerDown={(e) => e.stopPropagation()} // Crucial for button clicks on drag containers
-                      onClick={() => handleCategoryChange(cat.id as any)}
-                      className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap
-                        ${category === cat.id 
-                          ? 'bg-amber-800 text-white shadow-md ring-4 ring-amber-800/10' 
-                          : 'text-amber-800 hover:bg-amber-800/10 bg-white/50 border border-amber-900/5'
-                        }
-                      `}
-                    >
-                      {cat.icon} {cat.name}
-                    </button>
-                  ))}
-                </motion.div>
-              </div>
+              {/* The Draggable Wrapper */}
+              <motion.div 
+                layout
+                drag="x"
+                dragConstraints={containerRef}
+                dragElastic={0.1}
+                dragMomentum={true}
+                whileTap={{ cursor: 'grabbing' }}
+                className="flex gap-3 p-4 px-12 cursor-grab w-max flex-nowrap"
+              >
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onPointerDown={(e) => e.stopPropagation()} // Allow button to be clicked even inside drag container
+                    onClick={() => handleCategoryChange(cat.id as any)}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold transition-all whitespace-nowrap shadow-sm border
+                      ${category === cat.id 
+                        ? 'bg-amber-800 text-white shadow-md border-amber-900 ring-4 ring-amber-800/10' 
+                        : 'text-amber-800 hover:bg-amber-800/10 bg-white/90 border-amber-900/10'
+                      }
+                    `}
+                  >
+                    {cat.icon} {cat.name}
+                  </button>
+                ))}
+              </motion.div>
             </div>
 
-            <div className="flex-1 p-6 md:p-12 flex flex-col">
+            {/* Problem Content Container - FIXED Strict Horizontal Centering */}
+            <div className="flex-1 p-6 md:p-12 overflow-y-auto custom-scrollbar flex flex-col items-center w-full">
               <AnimatePresence mode="wait">
                 {!problem && !loading && (
                   <motion.div 
@@ -306,7 +288,7 @@ export const OlympiadModule: React.FC = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="flex-1 flex flex-col items-center justify-center text-center space-y-8"
+                    className="flex-1 flex flex-col items-center justify-center text-center space-y-8 w-full max-w-4xl"
                   >
                      <div className="relative">
                         <motion.div
@@ -317,7 +299,7 @@ export const OlympiadModule: React.FC = () => {
                         </motion.div>
                         <Landmark className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-amber-800/5" size={160} />
                      </div>
-                     <div className="max-w-md">
+                     <div className="max-w-md mx-auto">
                         <h3 className="text-3xl font-serif font-black text-amber-900 mb-4 tracking-tight">
                             唤醒 {getCategoryName(category)} 的智慧
                         </h3>
@@ -341,7 +323,7 @@ export const OlympiadModule: React.FC = () => {
                     key="loading"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="flex-1 flex flex-col items-center justify-center space-y-6"
+                    className="flex-1 flex flex-col items-center justify-center space-y-6 w-full max-w-4xl"
                   >
                      <div className="relative">
                        <div className="w-24 h-24 border-8 border-amber-200 border-t-amber-800 rounded-full animate-spin shadow-xl"></div>
@@ -359,12 +341,13 @@ export const OlympiadModule: React.FC = () => {
                 {problem && (
                   <motion.div 
                     key={`problem-${category}-${problem.title}`}
-                    initial={{ opacity: 0, x: 50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="flex-1 flex flex-col gap-8 max-w-4xl mx-auto w-full"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex flex-col gap-8 w-full max-w-4xl mx-auto"
                   >
+                    {/* Background Story */}
                     {problem.background && (
-                      <div className="bg-amber-900/5 border-l-8 border-amber-800 p-6 rounded-r-3xl text-sm md:text-base text-amber-950 font-serif italic shadow-sm relative overflow-hidden group">
+                      <div className="bg-amber-900/5 border-l-8 border-amber-800 p-6 rounded-r-3xl text-sm md:text-base text-amber-950 font-serif italic shadow-sm relative overflow-hidden group w-full">
                         <div className="absolute -right-4 -bottom-4 text-amber-900/5 group-hover:scale-110 transition-transform">
                            <History size={100} />
                         </div>
@@ -378,11 +361,12 @@ export const OlympiadModule: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="bg-white/60 p-8 md:p-12 rounded-[2rem] shadow-xl border border-amber-900/5 relative group transition-all hover:bg-white/80">
-                      <div className="absolute -top-4 -left-4 w-12 h-12 bg-amber-800 text-white rounded-2xl flex items-center justify-center font-black text-2xl shadow-xl rotate-[-12deg] group-hover:rotate-0 transition-transform">
+                    {/* Problem Card */}
+                    <div className="bg-white/70 p-8 md:p-12 rounded-[2.5rem] shadow-xl border border-amber-900/5 relative group transition-all hover:bg-white/90 w-full">
+                      <div className="absolute -top-4 -left-4 w-12 h-12 bg-amber-800 text-white rounded-2xl flex items-center justify-center font-black text-2xl shadow-xl rotate-[-12deg] group-hover:rotate-0 transition-transform z-10">
                         ?
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 text-center md:text-left">
                         <h3 className="text-3xl md:text-4xl font-serif font-black text-amber-950 mb-6 leading-tight">
                           {problem.title}
                         </h3>
@@ -391,7 +375,7 @@ export const OlympiadModule: React.FC = () => {
                         </p>
                         <button 
                             onClick={toggleSpeech}
-                            className={`flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-full transition-all border-2 ${
+                            className={`flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-full transition-all border-2 mx-auto md:mx-0 ${
                                 isSpeaking 
                                 ? 'bg-amber-800 text-white border-amber-900 shadow-lg animate-pulse' 
                                 : 'bg-amber-50 text-amber-800 border-amber-800/20 hover:bg-amber-100 hover:border-amber-800/40'
@@ -406,7 +390,8 @@ export const OlympiadModule: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Options Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                       {problem.options.map((opt, idx) => (
                         <button
                           key={idx}
@@ -414,8 +399,8 @@ export const OlympiadModule: React.FC = () => {
                           disabled={!!feedback}
                           className={`group p-6 rounded-[1.5rem] border-2 text-left font-bold transition-all flex items-center gap-5
                             ${feedback 
-                               ? (opt === problem.answer ? 'bg-green-100 border-green-500 text-green-700' : (opt === selectedOption ? 'bg-red-100 border-red-500 text-red-700 opacity-100' : 'bg-white/30 border-transparent opacity-40'))
-                               : (selectedOption === opt ? 'bg-amber-800 border-amber-800 text-amber-50 shadow-2xl scale-[1.02] z-10' : 'bg-white/80 border-amber-900/10 text-amber-900 hover:border-amber-900/30 hover:bg-white')
+                               ? (opt === problem.answer ? 'bg-green-100 border-green-500 text-green-700' : (opt === selectedOption ? 'bg-red-100 border-red-500 text-red-700 opacity-100 shadow-inner' : 'bg-white/30 border-transparent opacity-40'))
+                               : (selectedOption === opt ? 'bg-amber-800 border-amber-900 text-amber-50 shadow-2xl scale-[1.02] z-10' : 'bg-white/80 border-amber-900/10 text-amber-900 hover:border-amber-900/30 hover:bg-white')
                             }
                           `}
                         >
@@ -427,8 +412,9 @@ export const OlympiadModule: React.FC = () => {
                       ))}
                     </div>
 
+                    {/* Action Button */}
                     {!feedback && (
-                      <div className="mt-8 flex justify-center">
+                      <div className="mt-8 flex justify-center w-full">
                         <button 
                           onClick={checkAnswer}
                           disabled={!selectedOption}
@@ -444,14 +430,15 @@ export const OlympiadModule: React.FC = () => {
                       </div>
                     )}
 
+                    {/* Explanation Section */}
                     <AnimatePresence>
                       {feedback && (
                         <motion.div 
                           initial={{ opacity: 0, y: 30 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="mt-8 bg-white p-10 rounded-[2.5rem] shadow-2xl border border-amber-900/10 relative overflow-hidden"
+                          className="mt-8 bg-white p-8 md:p-12 rounded-[2.5rem] shadow-2xl border border-amber-900/10 relative overflow-hidden w-full"
                         >
-                           <div className={`absolute top-0 right-0 p-8 opacity-5 ${feedback === 'correct' ? 'text-green-600' : 'text-red-600'}`}>
+                           <div className={`absolute top-0 right-0 p-8 opacity-5 pointer-events-none ${feedback === 'correct' ? 'text-green-600' : 'text-red-600'}`}>
                               {feedback === 'correct' ? <CheckCircle2 size={120} /> : <Crown size={120} />}
                            </div>
                            
@@ -464,21 +451,21 @@ export const OlympiadModule: React.FC = () => {
                                 <h4 className={`text-2xl md:text-3xl font-black ${feedback === 'correct' ? 'text-green-800' : 'text-amber-900'}`}>
                                   {feedback === 'correct' ? '逻辑严整，真理彰显！' : '再思其道，必有所悟。'}
                                 </h4>
-                                <p className="text-sm text-slate-400 mt-1 font-bold">正确答案：{problem.answer}</p>
+                                <p className="text-sm text-slate-400 mt-1 font-bold uppercase tracking-widest">正确答案：{problem.answer}</p>
                               </div>
                            </div>
                            
-                           <div className="bg-amber-50/70 p-8 rounded-3xl border border-amber-200/50 relative z-10">
+                           <div className="bg-amber-50/70 p-8 rounded-3xl border border-amber-200/50 relative z-10 w-full">
                               <div className="flex items-center gap-3 mb-4">
                                  <Lightbulb size={24} className="text-yellow-500" />
                                  <span className="font-black text-amber-950 uppercase tracking-widest text-sm">解题秘法</span>
                               </div>
-                              <div className="text-amber-900/80 leading-relaxed text-lg md:text-xl font-medium">
+                              <div className="text-amber-900/80 leading-relaxed text-lg md:text-xl font-medium whitespace-pre-line">
                                  {problem.explanation}
                               </div>
                            </div>
 
-                           <div className="mt-12 pt-8 border-t border-amber-900/10 flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
+                           <div className="mt-12 pt-8 border-t border-amber-900/10 flex flex-col md:flex-row justify-between items-center gap-6 relative z-10 w-full">
                               <div className="flex items-center gap-2 text-amber-800/40 text-sm font-bold animate-pulse">
                                  <Sparkles size={16} /> 继续探索下一个难题...
                               </div>
